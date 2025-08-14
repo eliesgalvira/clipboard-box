@@ -17,7 +17,7 @@ export function App() {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!inputRef.current) return;
-      if ( document.activeElement == inputRef.current) {
+      if ( document.activeElement === inputRef.current) {
         return;
       }
 
