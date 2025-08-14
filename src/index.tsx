@@ -16,16 +16,22 @@ export function App() {
     if (inputRef.current) inputRef.current.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (!inputRef.current) return;
+      if ( document.activeElement == inputRef.current) {
+        return;
+      }
+
       const isTypingKey =
         event.key.length === 1 ||
         event.key === 'Backspace' ||
         event.key === 'Delete';
 
-      if (
-        isTypingKey &&
-        document.activeElement !== inputRef.current &&
-        inputRef.current
-      ) {
+      const isCopyCombo = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c';
+      if (isCopyCombo) {
+        return;
+      }
+
+      if (isTypingKey) {
         inputRef.current.focus();
       }
     };
