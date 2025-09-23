@@ -53,7 +53,7 @@ export function App() {
   }, []);
 
   const onSave = async () => {
-    const toSave = text.slice(0, 1000);
+    const toSave = text.slice(0, 10000);
     if (password) {
       await saveByPassword({ password, value: toSave });
     } else {
@@ -138,7 +138,7 @@ export function App() {
             class="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-lg shadow-sm outline-none focus:ring-4 focus:ring-indigo-300/50 focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
             value={text}
             disabled={isQuerying || !password}
-            onInput={(e) => setText((e.target as HTMLTextAreaElement).value.slice(0, 1000))}
+            onInput={(e) => setText((e.target as HTMLTextAreaElement).value.slice(0, 10000))}
           />
         </div>
         <div class="mt-4 flex items-center justify-between">

@@ -53,7 +53,7 @@ export const saveByPassword = mutation({
       .query("text")
       .withIndex("by_password", (q) => q.eq("password", args.password))
       .unique();
-    const value = args.value.slice(0, 1000);
+    const value = args.value.slice(0, 10000);
     if (existing) {
       await ctx.db.patch(existing._id, { value });
     } else {
