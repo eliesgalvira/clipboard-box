@@ -114,7 +114,7 @@ export function App() {
 
   return (
     <div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 text-zinc-900 dark:text-zinc-100">
-      <div class="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/70 backdrop-blur shadow-xl p-8 mx-4" style="width: 100%; max-width: 28rem;">
+      <div class="w-full max-w-md md:max-w-2xl lg:max-w-3xl rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/70 backdrop-blur shadow-xl p-8 mx-4">
         <div class="flex items-center justify-center gap-3">
           <KeyboardIcon class="h-8 w-8 text-zinc-700 dark:text-zinc-200 opacity-80" />
           <h1 class="text-3xl font-semibold tracking-tight">Clipboard Box</h1>
@@ -142,13 +142,14 @@ export function App() {
           />
         </div>
         <div class="mt-4 flex items-center justify-between">
-          <Button
+          <button
             type="button"
+            class="px-4 py-2 rounded-lg bg-orange-400 text-orange-800 hover:bg-orange-500 font-medium shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
             onMouseDown={onQuery}
             disabled={!password || isQuerying}
           >
             Query
-          </Button>
+          </button>
           <div class="flex items-center gap-3">
             <Button
               type="button"
@@ -158,13 +159,14 @@ export function App() {
             >
               {password ? 'Reset password' : 'Password'}
             </Button>
-            <Button
+            <button
               type="button"
+              class="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-green-800 font-medium shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               onMouseDown={onSave}
               disabled={!password || isQuerying}
             >
               Save
-            </Button>
+            </button>
           </div>
         </div>
 
