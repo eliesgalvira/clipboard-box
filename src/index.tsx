@@ -22,10 +22,15 @@ export function App() {
   const saveByPassword = useMutation(api.text.saveByPassword);
 
   useEffect(() => {
-    if (inputRef.current && password) inputRef.current.focus();
+    if (inputRef.current && password && !showPasswordInput) inputRef.current.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!inputRef.current) return;
+      // Do not steal focus from the password input when it's open
+      if (showPasswordInput) return;
+      if (passwordInputRef.current && document.activeElement === passwordInputRef.current) {
+        return;
+      }
       if ( document.activeElement === inputRef.current) {
         return;
       }
@@ -50,7 +55,7 @@ export function App() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [showPasswordInput, password]);
 
   const onSave = async () => {
     const toSave = text.slice(0, 10000);
@@ -141,7 +146,7 @@ export function App() {
             onInput={(e) => setText((e.target as HTMLTextAreaElement).value.slice(0, 10000))}
           />
         </div>
-        <div class="mt-4 flex items-center justify-between">
+        <div class="mt-4 flex items-center justify-between gap-3">
           <button
             type="button"
             class="px-4 py-2 rounded-lg bg-orange-400 text-orange-800 hover:bg-orange-500 font-medium shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
@@ -154,6 +159,7 @@ export function App() {
             <Button
               type="button"
               variant="destructive"
+              className="bg-red-700 hover:bg-red-800 text-red-100"
               onMouseDown={() => setShowPasswordInput((v) => !v)}
               disabled={isSavingPassword}
             >
