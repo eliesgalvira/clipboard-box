@@ -60,7 +60,7 @@ export function App() {
 
   return (
     <div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 text-zinc-900 dark:text-zinc-100">
-      <div class="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/70 backdrop-blur shadow-xl p-8 mx-4" style="width: 50vw;">
+      <div class="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/70 backdrop-blur shadow-xl p-8 mx-4" style="width: 100%; max-width: 28rem;">
         <div class="flex items-center justify-center gap-3">
           <KeyboardIcon class="h-8 w-8 text-zinc-700 dark:text-zinc-200 opacity-80" />
           <h1 class="text-3xl font-semibold tracking-tight">Clipboard Box</h1>
@@ -106,8 +106,8 @@ export function App() {
           </div>
           <div class="rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2">
             <div class="font-medium text-zinc-800 dark:text-zinc-200">Typing</div>
-            <div class="mt-1">Backspace/Delete</div>
-            <div>Word delete with Ctrl+Backspace/Delete</div>
+            <div class="mt-1">Backspace/<wbr />Delete</div>
+            <div>Word delete with Ctrl+Backspace/<wbr />Delete</div>
           </div>
         </div>
       </div>
