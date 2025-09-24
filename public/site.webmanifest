@@ -13,13 +13,13 @@
       "type": "image/png"
     },
     {
-      "src": "/web-app-manifest-192x192-dark.png",
+      "src": "/web-app-manifest-192x192-dark.png?v=1",
       "sizes": "192x192",
       "type": "image/png",
       "media": "(prefers-color-scheme: dark)"
     },
     {
-      "src": "/web-app-manifest-512x512-dark.png",
+      "src": "/web-app-manifest-512x512-dark.png?v=1",
       "sizes": "512x512",
       "type": "image/png",
       "media": "(prefers-color-scheme: dark)"
