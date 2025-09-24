@@ -3,26 +3,26 @@
   "short_name": "Clipboard",
   "icons": [
     {
-      "src": "/web-app-manifest-192x192.png?v=3",
+      "src": "/web-app-manifest-192x192.png?v=17",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/web-app-manifest-512x512.png?v=3",
+      "src": "/web-app-manifest-512x512.png?v=17",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/web-app-manifest-192x192-dark.png?v=3",
+      "src": "/web-app-manifest-192x192-dark.png?v=17",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any",
       "media": "(prefers-color-scheme: dark)"
     },
     {
-      "src": "/web-app-manifest-512x512-dark.png?v=3",
+      "src": "/web-app-manifest-512x512-dark.png?v=17",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any",
