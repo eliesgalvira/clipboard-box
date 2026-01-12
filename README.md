@@ -5,10 +5,24 @@ A tiny, fast clipboard scratchpad. Type or paste text, then Save it to a Convex 
 Demo: https://clipboard-box.vercel.app/
 
 ## Features
-- Auto-focus on typing keys even if the textarea isn’t focused
-- Respect copy shortcuts (won’t steal focus on Ctrl/Cmd+C)
+- Auto-focus on typing keys even if the textarea isn't focused
+- Respects browser shortcuts (won't steal focus on modifier key combos)
 - Save and retrieve the latest text via Convex
 - Minimal, responsive UI built with Tailwind CSS and Preact
+
+## Custom textarea behavior
+
+The textarea has custom auto-focus behavior to improve UX. Below are the design decisions and their rationale:
+
+| Behavior | Rationale |
+|----------|-----------|
+| **Auto-focus on character/Backspace/Delete keys** | Allows users to start typing immediately without clicking the textarea first |
+| **Escape blurs the textarea** | Standard web behavior — pressing Escape unfocuses the active element |
+| **Text-editing shortcuts auto-focus (Ctrl/Cmd + V, A, Z, Y)** | Reduces friction — users pressing Ctrl+A likely want to select textarea content, Ctrl+V to paste into it, etc. This deviates from web standards for improved UX |
+| **Other modifier keys (Ctrl/Cmd/Alt) are ignored** | Prevents stealing focus from browser shortcuts like Ctrl+L (URL bar), Ctrl+T (new tab), Ctrl+F (find), etc. |
+| **Space key is ignored** | Preserves native page scrolling behavior (Space scrolls the page when no element is focused) |
+| **Tab key is ignored** | Allows natural keyboard navigation between focusable elements |
+| **Arrow/F-keys/Enter are ignored** | These have specific browser or accessibility functions that shouldn't be intercepted |
 
 ## Keyboard shortcuts
 - Ctrl/Cmd+V: Paste
@@ -71,7 +85,7 @@ pnpm preview       # preview production build locally
 - API:
   - `text.save({ value: string })` — upserts the single row
   - `text.get({}) -> string` — returns the latest saved value (empty string if none)
-- UI: a textarea with Save and Query buttons; Save writes to Convex, Query reads from Convex. Typing anywhere brings focus back to the textarea unless you’re copying (Ctrl/Cmd+C).
+- UI: a textarea with Save and Query buttons; Save writes to Convex, Query reads from Convex. Typing anywhere brings focus back to the textarea unless you're using modifier keys or Space (see [Custom textarea behavior](#custom-textarea-behavior)).
 
 ## Deployment
 Frontend can be deployed to any static host (e.g., Vercel, Netlify). Backend uses Convex.
