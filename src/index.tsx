@@ -42,17 +42,27 @@ export function App() {
         return;
       }
 
+      // Skip Space to preserve native page scrolling behavior
+      if (event.key === ' ') {
+        return;
+      }
+
+      // Allow text-editing shortcuts to auto-focus (Ctrl/Cmd + V, A, Z, Y)
+      const isTextEditingShortcut =
+        (event.ctrlKey || event.metaKey) &&
+        ['v', 'a', 'z', 'y'].includes(event.key.toLowerCase());
+
+      // Skip other modifier combos (let browser handle Ctrl+L, Ctrl+T, etc.)
+      if ((event.ctrlKey || event.metaKey || event.altKey) && !isTextEditingShortcut) {
+        return;
+      }
+
       const isTypingKey =
         event.key.length === 1 ||
         event.key === 'Backspace' ||
         event.key === 'Delete';
 
-      const isCopyCombo = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c';
-      if (isCopyCombo) {
-        return;
-      }
-
-      if (isTypingKey) {
+      if (isTypingKey || isTextEditingShortcut) {
         inputRef.current.focus();
       }
     };
