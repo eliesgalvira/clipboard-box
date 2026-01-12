@@ -26,6 +26,13 @@ export function App() {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!inputRef.current) return;
+
+      // Escape unfocuses the textarea
+      if (event.key === 'Escape' && document.activeElement === inputRef.current) {
+        inputRef.current.blur();
+        return;
+      }
+
       // Do not steal focus from the password input when it's open
       if (showPasswordInput) return;
       if (passwordInputRef.current && document.activeElement === passwordInputRef.current) {
