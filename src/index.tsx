@@ -2,11 +2,13 @@ import { render } from 'preact';
 import { useRef, useEffect, useState } from 'preact/hooks';
 import { ConvexProvider, ConvexReactClient, useConvex, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
+import { Clipboard, Database, Save as SaveIcon } from 'lucide-react';
 import KeyboardIcon from './icons/KeyboardIcon';
 import './tw.css';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 
 export function App() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -17,9 +19,11 @@ export function App() {
   const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false);
   const [pendingPassword, setPendingPassword] = useState<string>('');
   const [password, setPassword] = useLocalStorage<string | null>('password', null);
+  const [copiedText, copyToClipboard] = useCopyToClipboard();
   const convex = useConvex();
   const saveTextLegacy = useMutation(api.text.save);
   const saveByPassword = useMutation(api.text.saveByPassword);
+  const isCopied = copiedText === text && copiedText !== null;
 
   useEffect(() => {
     if (inputRef.current && password && !showPasswordInput) inputRef.current.focus();
@@ -164,32 +168,50 @@ export function App() {
           />
         </div>
         <div class="mt-4 flex items-center justify-between gap-3">
-          <button
+          <Button
             type="button"
-            class="px-4 py-2 rounded-lg bg-orange-400 text-orange-800 hover:bg-orange-500 font-medium shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            size="icon"
+            className="h-11 w-11 rounded-lg bg-orange-400 text-orange-800 shadow-sm hover:bg-orange-500 [&_svg]:size-6"
             onMouseDown={onQuery}
             disabled={!password || isQuerying}
+            aria-label="Query"
+            title="Query"
           >
-            Query
-          </button>
+            <Database />
+          </Button>
           <div class="flex items-center gap-3">
             <Button
               type="button"
               variant="destructive"
-              className="bg-red-700 hover:bg-red-800 text-red-100"
+              className="h-11 bg-red-700 px-4 text-base hover:bg-red-800 text-red-100"
               onMouseDown={() => setShowPasswordInput((v) => !v)}
               disabled={isSavingPassword}
             >
               {password ? 'Reset password' : 'Password'}
             </Button>
-            <button
+            <Button
               type="button"
-              class="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-green-800 font-medium shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 rounded-lg border-zinc-300 bg-white text-zinc-700 shadow-sm hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 [&_svg]:size-6"
+              onClick={() => void copyToClipboard(text)}
+              disabled={isQuerying}
+              aria-label={isCopied ? 'Copied text to clipboard' : 'Copy text to clipboard'}
+              title={isCopied ? 'Copied' : 'Copy'}
+            >
+              <Clipboard className={isCopied ? 'text-green-600 dark:text-green-400' : ''} />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              className="h-11 w-11 rounded-lg bg-green-500 text-green-800 shadow-sm hover:bg-green-600 [&_svg]:size-6"
               onMouseDown={onSave}
               disabled={!password || isQuerying}
+              aria-label="Save"
+              title="Save"
             >
-              Save
-            </button>
+              <SaveIcon />
+            </Button>
           </div>
         </div>
 
@@ -241,4 +263,3 @@ render(
   </ConvexProviderAny>,
   document.getElementById('app')!
 );
-
