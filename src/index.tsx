@@ -12,6 +12,7 @@ import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import { cn } from '@/lib/utils';
 
 type FeedbackState = 'idle' | 'running' | 'done';
+const SUCCESS_FEEDBACK_MS = 200;
 
 export function App() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -48,7 +49,15 @@ export function App() {
     feedbackTimeouts.current[key] = window.setTimeout(() => {
       setState('idle');
       delete feedbackTimeouts.current[key];
-    }, 900);
+    }, SUCCESS_FEEDBACK_MS);
+  };
+
+  const resetFeedback = (
+    key: 'copy' | 'query' | 'save',
+    setState: (value: FeedbackState) => void,
+  ) => {
+    clearFeedbackTimer(key);
+    setState('idle');
   };
 
   useEffect(() => {
@@ -122,9 +131,9 @@ export function App() {
       } else {
         await saveTextLegacy({ value: toSave });
       }
-      settleFeedback('save', setSaveFeedback);
+      resetFeedback('save', setSaveFeedback);
     } catch (error) {
-      setSaveFeedback('idle');
+      resetFeedback('save', setSaveFeedback);
       throw error;
     }
   };
@@ -146,9 +155,9 @@ export function App() {
     } finally {
       setIsQuerying(false);
       if (didLoad) {
-        settleFeedback('query', setQueryFeedback);
+        resetFeedback('query', setQueryFeedback);
       } else {
-        setQueryFeedback('idle');
+        resetFeedback('query', setQueryFeedback);
       }
       if (inputRef.current && password) inputRef.current.focus();
     }
@@ -201,11 +210,16 @@ export function App() {
     }
   };
 
-  const getIconButtonClass = (feedback: FeedbackState) =>
+  const getIconButtonClass = (
+    feedback: FeedbackState,
+    options?: { loadingStyle?: 'default' | 'skeleton' },
+  ) =>
     cn(
-      'h-10 w-10 rounded-md border border-zinc-300 bg-white text-zinc-700 shadow-none transition-colors duration-150 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800',
+      'relative h-10 w-10 overflow-hidden rounded-md border border-zinc-300 bg-white text-zinc-700 shadow-none transition-colors duration-150 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800',
       feedback === 'running' &&
-        'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-100',
+        (options?.loadingStyle === 'skeleton'
+          ? 'border-zinc-950 bg-zinc-950 text-zinc-100 disabled:opacity-100 hover:bg-zinc-950 dark:border-zinc-950 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-950'
+          : 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-100'),
       feedback === 'done' &&
         'border-zinc-700 bg-zinc-700 text-white hover:bg-zinc-700 dark:border-zinc-300 dark:bg-zinc-300 dark:text-zinc-950 dark:hover:bg-zinc-300',
     );
@@ -216,6 +230,8 @@ export function App() {
     copyFeedback === 'running' ? 'Copying' : copyFeedback === 'done' ? 'Copied' : 'Copy';
   const saveLabel =
     saveFeedback === 'running' ? 'Saving' : saveFeedback === 'done' ? 'Saved' : 'Save';
+  const queryLoading = queryFeedback === 'running';
+  const saveLoading = saveFeedback === 'running';
 
   return (
     <div class="min-h-screen bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
@@ -250,14 +266,20 @@ export function App() {
                 type="button"
                 variant="outline"
                 size="icon"
-                className={getIconButtonClass(queryFeedback)}
+                className={getIconButtonClass(queryFeedback, { loadingStyle: 'skeleton' })}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => void onQuery()}
                 disabled={!password || isQuerying}
                 aria-label={queryLabel}
                 title={queryLabel}
               >
-                <Database />
+                {queryLoading && (
+                  <span
+                    aria-hidden="true"
+                    class="button-loading-overlay pointer-events-none absolute inset-0 rounded-[inherit] bg-zinc-500"
+                  />
+                )}
+                <Database className="relative z-10" />
               </Button>
               <Button
                 type="button"
@@ -270,20 +292,26 @@ export function App() {
                 aria-label={copyLabel}
                 title={copyLabel}
               >
-                <Clipboard />
+                <Clipboard className="relative z-10" />
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                className={getIconButtonClass(saveFeedback)}
+                className={getIconButtonClass(saveFeedback, { loadingStyle: 'skeleton' })}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => void onSave()}
                 disabled={!password || isQuerying}
                 aria-label={saveLabel}
                 title={saveLabel}
               >
-                <SaveIcon />
+                {saveLoading && (
+                  <span
+                    aria-hidden="true"
+                    class="button-loading-overlay pointer-events-none absolute inset-0 rounded-[inherit] bg-zinc-500"
+                  />
+                )}
+                <SaveIcon className="relative z-10" />
               </Button>
             </div>
           </div>
@@ -323,16 +351,16 @@ export function App() {
               id="focus"
               ref={inputRef}
               placeholder={
-                isQuerying
-                  ? 'Loading...'
-                  : password
+                password
                   ? 'Type or paste text.'
                   : 'Enter a password to start typing.'
               }
               rows={4}
               class="min-h-[360px] flex-1 resize-none rounded-md border border-zinc-300 bg-white px-4 py-3 text-[15px] leading-6 text-zinc-900 outline-none transition-colors duration-150 focus:border-zinc-500 focus:ring-4 focus:ring-zinc-200 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400 dark:focus:ring-zinc-800 dark:disabled:bg-zinc-950 dark:disabled:text-zinc-500 lg:min-h-0"
               value={text}
-              disabled={isQuerying || !password}
+              disabled={!password}
+              readOnly={isQuerying}
+              aria-busy={isQuerying}
               onInput={(e) => setText((e.target as HTMLTextAreaElement).value.slice(0, 10000))}
             />
           </div>
