@@ -9,21 +9,56 @@ import { useLocalStorage } from '@uidotdev/usehooks';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
+import { cn } from '@/lib/utils';
+
+type FeedbackState = 'idle' | 'running' | 'done';
+const SUCCESS_FEEDBACK_MS = 200;
 
 export function App() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const passwordInputRef = useRef<HTMLInputElement | null>(null);
+  const feedbackTimeouts = useRef<Partial<Record<'copy' | 'query' | 'save', number>>>({});
   const [text, setText] = useState<string>('');
   const [isQuerying, setIsQuerying] = useState<boolean>(false);
   const [isSavingPassword, setIsSavingPassword] = useState<boolean>(false);
   const [showPasswordInput, setShowPasswordInput] = useState<boolean>(false);
   const [pendingPassword, setPendingPassword] = useState<string>('');
   const [password, setPassword] = useLocalStorage<string | null>('password', null);
-  const [copiedText, copyToClipboard] = useCopyToClipboard();
+  const [, copyToClipboard] = useCopyToClipboard();
+  const [copyFeedback, setCopyFeedback] = useState<FeedbackState>('idle');
+  const [queryFeedback, setQueryFeedback] = useState<FeedbackState>('idle');
+  const [saveFeedback, setSaveFeedback] = useState<FeedbackState>('idle');
   const convex = useConvex();
   const saveTextLegacy = useMutation(api.text.save);
   const saveByPassword = useMutation(api.text.saveByPassword);
-  const isCopied = copiedText === text && copiedText !== null;
+
+  const clearFeedbackTimer = (key: 'copy' | 'query' | 'save') => {
+    const timeout = feedbackTimeouts.current[key];
+    if (timeout) {
+      window.clearTimeout(timeout);
+      delete feedbackTimeouts.current[key];
+    }
+  };
+
+  const settleFeedback = (
+    key: 'copy' | 'query' | 'save',
+    setState: (value: FeedbackState) => void,
+  ) => {
+    clearFeedbackTimer(key);
+    setState('done');
+    feedbackTimeouts.current[key] = window.setTimeout(() => {
+      setState('idle');
+      delete feedbackTimeouts.current[key];
+    }, SUCCESS_FEEDBACK_MS);
+  };
+
+  const resetFeedback = (
+    key: 'copy' | 'query' | 'save',
+    setState: (value: FeedbackState) => void,
+  ) => {
+    clearFeedbackTimer(key);
+    setState('idle');
+  };
 
   useEffect(() => {
     if (inputRef.current && password && !showPasswordInput) inputRef.current.focus();
@@ -78,17 +113,36 @@ export function App() {
     };
   }, [showPasswordInput, password]);
 
+  useEffect(() => {
+    return () => {
+      clearFeedbackTimer('copy');
+      clearFeedbackTimer('query');
+      clearFeedbackTimer('save');
+    };
+  }, []);
+
   const onSave = async () => {
-    const toSave = text.slice(0, 10000);
-    if (password) {
-      await saveByPassword({ password, value: toSave });
-    } else {
-      await saveTextLegacy({ value: toSave });
+    clearFeedbackTimer('save');
+    setSaveFeedback('running');
+    try {
+      const toSave = text.slice(0, 10000);
+      if (password) {
+        await saveByPassword({ password, value: toSave });
+      } else {
+        await saveTextLegacy({ value: toSave });
+      }
+      resetFeedback('save', setSaveFeedback);
+    } catch (error) {
+      resetFeedback('save', setSaveFeedback);
+      throw error;
     }
   };
 
   const onQuery = async () => {
+    clearFeedbackTimer('query');
+    setQueryFeedback('running');
     setIsQuerying(true);
+    let didLoad = false;
     try {
       let latest = '';
       if (password) {
@@ -97,10 +151,28 @@ export function App() {
         latest = await convex.query(api.text.get, {});
       }
       setText(latest);
+      didLoad = true;
     } finally {
       setIsQuerying(false);
+      if (didLoad) {
+        resetFeedback('query', setQueryFeedback);
+      } else {
+        resetFeedback('query', setQueryFeedback);
+      }
       if (inputRef.current && password) inputRef.current.focus();
     }
+  };
+
+  const onCopy = async () => {
+    clearFeedbackTimer('copy');
+    setCopyFeedback('running');
+    const didCopy = await copyToClipboard(text);
+    if (didCopy) {
+      settleFeedback('copy', setCopyFeedback);
+    } else {
+      setCopyFeedback('idle');
+    }
+    if (inputRef.current && password) inputRef.current.focus();
   };
 
   useEffect(() => {
@@ -138,115 +210,165 @@ export function App() {
     }
   };
 
-  return (
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 text-zinc-900 dark:text-zinc-100">
-      <div class="w-full max-w-md md:max-w-2xl lg:max-w-3xl rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/70 backdrop-blur shadow-xl p-8 mx-4">
-        <div class="flex items-center justify-center gap-3">
-          <KeyboardIcon class="h-8 w-8 text-zinc-700 dark:text-zinc-200 opacity-80" />
-          <h1 class="text-3xl font-semibold tracking-tight">Clipboard Box</h1>
-        </div>
-        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400 text-center">
-          Copy and paste text with ease.
-        </p>
-        <div class="mt-6">
-          <label htmlFor="focus" class="sr-only">Type something</label>
-          <textarea
-            id="focus"
-            ref={inputRef}
-            placeholder={
-              isQuerying
-                ? 'Loading...'
-                : password
-                ? 'Type something...'
-                : 'ENTER A PASSWORD TO ENABLE TYPING'
-            }
-            rows={4}
-            class="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-lg shadow-sm outline-none focus:ring-4 focus:ring-indigo-300/50 focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
-            value={text}
-            disabled={isQuerying || !password}
-            onInput={(e) => setText((e.target as HTMLTextAreaElement).value.slice(0, 10000))}
-          />
-        </div>
-        <div class="mt-4 flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            size="icon"
-            className="h-11 w-11 rounded-lg bg-orange-400 text-orange-800 shadow-sm hover:bg-orange-500 [&_svg]:size-6"
-            onMouseDown={onQuery}
-            disabled={!password || isQuerying}
-            aria-label="Query"
-            title="Query"
-          >
-            <Database />
-          </Button>
-          <div class="flex items-center gap-3">
-            <Button
-              type="button"
-              variant="destructive"
-              className="h-11 bg-red-700 px-4 text-base hover:bg-red-800 text-red-100"
-              onMouseDown={() => setShowPasswordInput((v) => !v)}
-              disabled={isSavingPassword}
-            >
-              {password ? 'Reset password' : 'Password'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-11 w-11 rounded-lg border-zinc-300 bg-white text-zinc-700 shadow-sm hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 [&_svg]:size-6"
-              onClick={() => void copyToClipboard(text)}
-              disabled={isQuerying}
-              aria-label={isCopied ? 'Copied text to clipboard' : 'Copy text to clipboard'}
-              title={isCopied ? 'Copied' : 'Copy'}
-            >
-              <Clipboard className={isCopied ? 'text-green-600 dark:text-green-400' : ''} />
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              className="h-11 w-11 rounded-lg bg-green-500 text-green-800 shadow-sm hover:bg-green-600 [&_svg]:size-6"
-              onMouseDown={onSave}
-              disabled={!password || isQuerying}
-              aria-label="Save"
-              title="Save"
-            >
-              <SaveIcon />
-            </Button>
-          </div>
-        </div>
+  const getIconButtonClass = (
+    feedback: FeedbackState,
+    options?: { loadingStyle?: 'default' | 'skeleton' },
+  ) =>
+    cn(
+      'relative h-10 w-10 overflow-hidden rounded-md border border-zinc-300 bg-white text-zinc-700 shadow-none transition-colors duration-150 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800',
+      feedback === 'running' &&
+        (options?.loadingStyle === 'skeleton'
+          ? 'border-zinc-950 bg-zinc-950 text-zinc-100 disabled:opacity-100 hover:bg-zinc-950 dark:border-zinc-950 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-950'
+          : 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-100'),
+      feedback === 'done' &&
+        'border-zinc-700 bg-zinc-700 text-white hover:bg-zinc-700 dark:border-zinc-300 dark:bg-zinc-300 dark:text-zinc-950 dark:hover:bg-zinc-300',
+    );
 
-        {showPasswordInput && (
-          <div class="mt-4 flex items-center gap-3">
-            <Input
-              ref={passwordInputRef as any}
-              type="password"
-              placeholder="Enter password"
-              value={pendingPassword}
-              onChange={(e) => setPendingPassword((e.target as HTMLInputElement).value)}
-              onKeyDown={(e) => {
-                if ((e as any).key === 'Enter') {
-                  e.preventDefault();
-                  void submitPassword();
-                }
-              }}
-              disabled={isSavingPassword}
+  const queryLabel =
+    queryFeedback === 'running' ? 'Loading' : queryFeedback === 'done' ? 'Loaded' : 'Query';
+  const copyLabel =
+    copyFeedback === 'running' ? 'Copying' : copyFeedback === 'done' ? 'Copied' : 'Copy';
+  const saveLabel =
+    saveFeedback === 'running' ? 'Saving' : saveFeedback === 'done' ? 'Saved' : 'Save';
+  const queryLoading = queryFeedback === 'running';
+  const saveLoading = saveFeedback === 'running';
+
+  return (
+    <div class="min-h-screen bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <div class="mx-auto flex min-h-screen w-full max-w-[1400px] flex-col px-4 py-4 sm:px-6 sm:py-6">
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-zinc-300 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div class="flex flex-col gap-4 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800 lg:flex-row lg:items-center lg:justify-between lg:px-6">
+            <div class="min-w-0">
+              <div class="flex items-center gap-3">
+                <KeyboardIcon class="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
+                <div class="text-base font-medium text-zinc-950 dark:text-zinc-100">Clipboard Box</div>
+              </div>
+              <div class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                {password ? 'Protected clipboard active.' : 'Enter a password to enable editing.'}
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  'h-10 rounded-md border-zinc-300 bg-white px-3 text-sm text-zinc-700 shadow-none transition-colors duration-150 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800',
+                  showPasswordInput &&
+                    'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-100',
+                )}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setShowPasswordInput((v) => !v)}
+                disabled={isSavingPassword}
+              >
+                {password ? 'Reset password' : 'Password'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className={getIconButtonClass(queryFeedback, { loadingStyle: 'skeleton' })}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => void onQuery()}
+                disabled={!password || isQuerying}
+                aria-label={queryLabel}
+                title={queryLabel}
+              >
+                {queryLoading && (
+                  <span
+                    aria-hidden="true"
+                    class="button-loading-overlay pointer-events-none absolute inset-0 rounded-[inherit] bg-zinc-500"
+                  />
+                )}
+                <Database className="relative z-10" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className={getIconButtonClass(copyFeedback)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => void onCopy()}
+                disabled={isQuerying}
+                aria-label={copyLabel}
+                title={copyLabel}
+              >
+                <Clipboard className="relative z-10" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className={getIconButtonClass(saveFeedback, { loadingStyle: 'skeleton' })}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => void onSave()}
+                disabled={!password || isQuerying}
+                aria-label={saveLabel}
+                title={saveLabel}
+              >
+                {saveLoading && (
+                  <span
+                    aria-hidden="true"
+                    class="button-loading-overlay pointer-events-none absolute inset-0 rounded-[inherit] bg-zinc-500"
+                  />
+                )}
+                <SaveIcon className="relative z-10" />
+              </Button>
+            </div>
+          </div>
+
+          {showPasswordInput && (
+            <div class="flex flex-col gap-3 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800 sm:flex-row sm:items-center lg:px-6">
+              <Input
+                ref={passwordInputRef as any}
+                type="password"
+                placeholder="Enter password"
+                value={pendingPassword}
+                className="h-10 rounded-md border-zinc-300 bg-white text-sm shadow-none focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900"
+                onChange={(e) => setPendingPassword((e.target as HTMLInputElement).value)}
+                onKeyDown={(e) => {
+                  if ((e as any).key === 'Enter') {
+                    e.preventDefault();
+                    void submitPassword();
+                  }
+                }}
+                disabled={isSavingPassword}
+              />
+              <Button
+                type="button"
+                className="h-10 rounded-md bg-zinc-900 px-4 text-sm text-white shadow-none hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => void submitPassword()}
+                disabled={isSavingPassword}
+              >
+                {isSavingPassword ? 'Saving...' : 'Enter'}
+              </Button>
+            </div>
+          )}
+
+          <div class="flex min-h-0 flex-1 flex-col p-4 lg:p-6">
+            <label htmlFor="focus" class="sr-only">Clipboard text</label>
+            <textarea
+              id="focus"
+              ref={inputRef}
+              placeholder={
+                password
+                  ? 'Type or paste text.'
+                  : 'Enter a password to start typing.'
+              }
+              rows={4}
+              class="min-h-[360px] flex-1 resize-none rounded-md border border-zinc-300 bg-white px-4 py-3 text-[15px] leading-6 text-zinc-900 outline-none transition-colors duration-150 focus:border-zinc-500 focus:ring-4 focus:ring-zinc-200 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400 dark:focus:ring-zinc-800 dark:disabled:bg-zinc-950 dark:disabled:text-zinc-500 lg:min-h-0"
+              value={text}
+              disabled={!password}
+              readOnly={isQuerying}
+              aria-busy={isQuerying}
+              onInput={(e) => setText((e.target as HTMLTextAreaElement).value.slice(0, 10000))}
             />
-            <Button type="button" onMouseDown={submitPassword} disabled={isSavingPassword}>
-              {isSavingPassword ? 'Saving...' : 'Enter'}
-            </Button>
           </div>
-        )}
-        <div class="mt-6 grid grid-cols-2 gap-3 text-xs text-zinc-600 dark:text-zinc-400">
-          <div class="rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2">
-            <div class="font-medium text-zinc-800 dark:text-zinc-200">Shortcuts</div>
-            <div class="mt-1">Ctrl+V Paste</div>
-            <div>Ctrl+A Select All</div>
-            <div>Ctrl+Z Undo, Ctrl+Y Redo</div>
-          </div>
-          <div class="rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2">
-            <div class="font-medium text-zinc-800 dark:text-zinc-200">Typing</div>
-            <div class="mt-1">Backspace/<wbr />Delete</div>
-            <div>Word delete with Ctrl+Backspace/<wbr />Delete</div>
+
+          <div class="grid gap-2 border-t border-zinc-200 px-4 py-3 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400 lg:grid-cols-[1.4fr_1.2fr_auto] lg:px-6">
+            <div>Ctrl+V pastes. Ctrl+A selects all. Ctrl+Z and Ctrl+Y work from anywhere.</div>
+            <div>Backspace and Delete refocus the editor. Escape blurs it.</div>
+            <div class="text-zinc-500 dark:text-zinc-400">{text.length} / 10000</div>
           </div>
         </div>
       </div>
