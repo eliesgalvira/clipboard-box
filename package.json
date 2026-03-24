@@ -5,11 +5,15 @@
 		"dev": "npm-run-all --parallel dev:frontend dev:backend dev:css",
 		"dev:frontend": "vite",
 		"dev:backend": "convex dev",
-		"dev:css": "pnpm dlx @tailwindcss/cli -i ./src/tailwind.css -o ./src/tw.css --watch",
-		"prebuild": "pnpm tw:build",
-		"tw:build": "pnpm dlx @tailwindcss/cli -i ./src/tailwind.css -o ./src/tw.css --minify",
+		"dev:css": "bunx @tailwindcss/cli -i ./src/tailwind.css -o ./src/tw.css --watch",
+		"prebuild": "bun run tw:build",
+		"tw:build": "bunx @tailwindcss/cli -i ./src/tailwind.css -o ./src/tw.css --minify",
 		"build": "vite build",
-		"preview": "vite preview"
+		"preview": "vite preview",
+		"prepare": "effect-language-service patch",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest"
 	},
 	"dependencies": {
 		"@radix-ui/react-slot": "1.2.3",
@@ -17,19 +21,27 @@
 		"class-variance-authority": "0.7.1",
 		"clsx": "2.1.1",
 		"convex": "1.25.4",
+		"effect": "^4.0.0-beta.38",
 		"lucide-react": "0.544.0",
 		"preact": "10.27.0",
 		"tailwind-merge": "3.3.1",
 		"tailwindcss-animate": "1.0.7"
 	},
 	"devDependencies": {
+		"@effect/language-service": "^0.83.1",
+		"@effect/vitest": "^4.0.0-beta.38",
 		"@preact/preset-vite": "2.10.2",
+		"@testing-library/preact": "^3.2.4",
+		"@testing-library/user-event": "^14.6.1",
+		"@types/node": "^25.5.0",
 		"@types/react": "19.1.9",
 		"@types/react-dom": "19.1.7",
+		"jsdom": "^29.0.1",
 		"npm-run-all": "4.1.5",
 		"tailwindcss": "4.1.11",
 		"typescript": "5.9.2",
 		"vite": "7.1.1",
-		"vite-plugin-compression": "0.5.1"
+		"vite-plugin-compression": "0.5.1",
+		"vitest": "^4.1.1"
 	}
 }

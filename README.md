@@ -35,23 +35,24 @@ The textarea has custom auto-focus behavior to improve UX. Below are the design 
 
 ## Tech stack
 - Preact + Vite
+- Effect v4 beta for application modules and tests
 - Tailwind CSS v4
 - Convex 1.x (queries/mutations, React client)
 
 ## Requirements
-- Node.js 18+ and a package manager (pnpm recommended)
-- Convex CLI (installed automatically via dev dependency; invoked with `npx convex` or `pnpm convex`)
+- Bun 1.3+
+- Convex CLI (installed automatically via dev dependency; invoked with `bun run dev:backend`)
 
 ## Quick start
 
 1) Install deps
 ```bash
-pnpm install
+bun install
 ```
 
 2) Start Convex in one terminal and copy the printed Client URL
 ```bash
-pnpm dev:backend
+bun run dev:backend
 # Look for a line like: Client URL: https://<your-dev>.convex.cloud
 ```
 
@@ -62,22 +63,24 @@ echo "VITE_CONVEX_URL=<paste Client URL here>" > .env.local
 
 4) Start the frontend in another terminal
 ```bash
-pnpm dev:frontend
+bun run dev:frontend
 # Open the URL that Vite prints (usually http://localhost:5173)
 ```
 
 Alternatively, after creating `.env.local`, you can run both in one command:
 ```bash
-pnpm dev
+bun run dev
 ```
 
 ## Available scripts
 ```bash
-pnpm dev           # run frontend and Convex dev in parallel
-pnpm dev:frontend  # run Vite dev server
-pnpm dev:backend   # run Convex dev
-pnpm build         # production build (frontend)
-pnpm preview       # preview production build locally
+bun run dev           # run frontend and Convex dev in parallel
+bun run dev:frontend  # run Vite dev server
+bun run dev:backend   # run Convex dev
+bun run build         # production build (frontend)
+bun run preview       # preview production build locally
+bun run typecheck     # Effect-aware TypeScript check
+bun run test          # Effect/Vitest test suite
 ```
 
 ## How it works
@@ -85,7 +88,10 @@ pnpm preview       # preview production build locally
 - API:
   - `text.save({ value: string })` — upserts the single row
   - `text.get({}) -> string` — returns the latest saved value (empty string if none)
-- UI: a textarea with Save and Query buttons; Save writes to Convex, Query reads from Convex. Typing anywhere brings focus back to the textarea unless you're using modifier keys or Space (see [Custom textarea behavior](#custom-textarea-behavior)).
+- Architecture:
+  - `src/modules/clipboard-workspace` is the deep Effect module for persistence, password activation, copy, and length normalization.
+  - `src/modules/editor-focus` is the independent Effect module for global keydown autofocus rules.
+  - `src/features/clipboard-box` is the thin UI shell that wires those modules to Preact and Convex.
 
 ## Deployment
 Frontend can be deployed to any static host (e.g., Vercel, Netlify). Backend uses Convex.
