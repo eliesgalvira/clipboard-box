@@ -17,7 +17,11 @@ import {
 type FeedbackState = "idle" | "running" | "done"
 type FeedbackKey = "copy" | "query" | "save"
 
-const SUCCESS_FEEDBACK_MS = 200
+const SUCCESS_FEEDBACK_MS: Record<FeedbackKey, number> = {
+  copy: 1600,
+  query: 900,
+  save: 900,
+}
 
 const readStoredPassword = (): string | null => {
   const stored =
@@ -101,7 +105,7 @@ export const useClipboardBoxController = (
     feedbackTimeouts.current[key] = window.setTimeout(() => {
       setState("idle")
       delete feedbackTimeouts.current[key]
-    }, SUCCESS_FEEDBACK_MS)
+    }, SUCCESS_FEEDBACK_MS[key])
   }
 
   const resetFeedback = (
@@ -189,7 +193,7 @@ export const useClipboardBoxController = (
     try {
       const latest = await runClipboardWorkspace(ports, loadClipboard(password))
       setText(latest)
-      settleFeedback("query", setQueryFeedback)
+      resetFeedback("query", setQueryFeedback)
     } catch (error) {
       resetFeedback("query", setQueryFeedback)
       console.error(error)
@@ -255,11 +259,7 @@ export const useClipboardBoxController = (
     setPendingPassword,
     togglePasswordInput: () => setShowPasswordInput((value) => !value),
     queryLabel:
-      queryFeedback === "running"
-        ? "Loading"
-        : queryFeedback === "done"
-          ? "Loaded"
-          : "Query",
+      queryFeedback === "running" ? "Loading" : "Query",
     copyLabel:
       copyFeedback === "running"
         ? "Copying"

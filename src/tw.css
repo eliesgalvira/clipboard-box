@@ -7,6 +7,8 @@
       "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
+    --color-emerald-400: oklch(76.5% 0.177 163.223);
+    --color-emerald-600: oklch(59.6% 0.145 163.225);
     --color-zinc-50: oklch(98.5% 0 0);
     --color-zinc-100: oklch(96.7% 0.001 286.375);
     --color-zinc-200: oklch(92% 0.004 286.32);
@@ -27,6 +29,7 @@
     --text-base: 1rem;
     --text-base--line-height: calc(1.5 / 1);
     --font-weight-medium: 500;
+    --animate-spin: spin 1s linear infinite;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: var(--font-sans);
@@ -232,6 +235,9 @@
   .table {
     display: table;
   }
+  .h-4 {
+    height: calc(var(--spacing) * 4);
+  }
   .h-5 {
     height: calc(var(--spacing) * 5);
   }
@@ -252,6 +258,9 @@
   }
   .min-h-screen {
     min-height: 100vh;
+  }
+  .w-4 {
+    width: calc(var(--spacing) * 4);
   }
   .w-5 {
     width: calc(var(--spacing) * 5);
@@ -276,6 +285,9 @@
   }
   .transform {
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
+  }
+  .animate-spin {
+    animation: var(--animate-spin);
   }
   .resize-none {
     resize: none;
@@ -328,6 +340,9 @@
     border-bottom-style: var(--tw-border-style);
     border-bottom-width: 1px;
   }
+  .border-emerald-600 {
+    border-color: var(--color-emerald-600);
+  }
   .border-input {
     border-color: var(--input);
   }
@@ -352,6 +367,9 @@
   .bg-destructive {
     background-color: var(--destructive);
   }
+  .bg-emerald-600 {
+    background-color: var(--color-emerald-600);
+  }
   .bg-primary {
     background-color: var(--primary);
   }
@@ -363,6 +381,9 @@
   }
   .bg-white {
     background-color: var(--color-white);
+  }
+  .bg-zinc-50 {
+    background-color: var(--color-zinc-50);
   }
   .bg-zinc-100 {
     background-color: var(--color-zinc-100);
@@ -554,6 +575,13 @@
       }
     }
   }
+  .hover\:bg-emerald-600 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-emerald-600);
+      }
+    }
+  }
   .hover\:bg-primary\/90 {
     &:hover {
       @media (hover: hover) {
@@ -613,6 +641,20 @@
     &:hover {
       @media (hover: hover) {
         color: var(--accent-foreground);
+      }
+    }
+  }
+  .hover\:text-white {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-white);
+      }
+    }
+  }
+  .hover\:text-zinc-700 {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-zinc-700);
       }
     }
   }
@@ -752,6 +794,11 @@
       padding-inline: calc(var(--spacing) * 6);
     }
   }
+  .dark\:border-emerald-400 {
+    &:is(.dark *) {
+      border-color: var(--color-emerald-400);
+    }
+  }
   .dark\:border-zinc-100 {
     &:is(.dark *) {
       border-color: var(--color-zinc-100);
@@ -777,6 +824,11 @@
       border-color: var(--color-zinc-950);
     }
   }
+  .dark\:bg-emerald-400 {
+    &:is(.dark *) {
+      background-color: var(--color-emerald-400);
+    }
+  }
   .dark\:bg-zinc-100 {
     &:is(.dark *) {
       background-color: var(--color-zinc-100);
@@ -785,6 +837,11 @@
   .dark\:bg-zinc-300 {
     &:is(.dark *) {
       background-color: var(--color-zinc-300);
+    }
+  }
+  .dark\:bg-zinc-800 {
+    &:is(.dark *) {
+      background-color: var(--color-zinc-800);
     }
   }
   .dark\:bg-zinc-900 {
@@ -820,6 +877,15 @@
   .dark\:text-zinc-950 {
     &:is(.dark *) {
       color: var(--color-zinc-950);
+    }
+  }
+  .dark\:hover\:bg-emerald-400 {
+    &:is(.dark *) {
+      &:hover {
+        @media (hover: hover) {
+          background-color: var(--color-emerald-400);
+        }
+      }
     }
   }
   .dark\:hover\:bg-zinc-100 {
@@ -863,6 +929,33 @@
       &:hover {
         @media (hover: hover) {
           background-color: var(--color-zinc-950);
+        }
+      }
+    }
+  }
+  .dark\:hover\:text-zinc-100 {
+    &:is(.dark *) {
+      &:hover {
+        @media (hover: hover) {
+          color: var(--color-zinc-100);
+        }
+      }
+    }
+  }
+  .dark\:hover\:text-zinc-200 {
+    &:is(.dark *) {
+      &:hover {
+        @media (hover: hover) {
+          color: var(--color-zinc-200);
+        }
+      }
+    }
+  }
+  .dark\:hover\:text-zinc-950 {
+    &:is(.dark *) {
+      &:hover {
+        @media (hover: hover) {
+          color: var(--color-zinc-950);
         }
       }
     }
@@ -1176,6 +1269,11 @@
 @property --tw-duration {
   syntax: "*";
   inherits: false;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 @layer properties {
   @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {

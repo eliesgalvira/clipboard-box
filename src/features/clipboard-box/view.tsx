@@ -1,4 +1,12 @@
-import { Clipboard, Database, Save as SaveIcon } from "lucide-react"
+import {
+  ChevronDown,
+  ChevronUp,
+  Check,
+  Clipboard,
+  Database,
+  LoaderCircle,
+  Save as SaveIcon,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,16 +18,16 @@ import type { ClipboardBoxController } from "./controller"
 
 const getIconButtonClass = (
   feedback: ClipboardBoxController["copyFeedback"],
-  options?: { readonly loadingStyle?: "default" | "skeleton" },
+  options?: { readonly tone?: "default" | "success" },
 ) =>
   cn(
-    "relative h-10 w-10 overflow-hidden rounded-md border border-zinc-300 bg-white text-zinc-700 shadow-none transition-colors duration-150 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
+    "relative h-10 w-10 overflow-hidden rounded-md border border-zinc-300 bg-white text-zinc-700 shadow-none transition-colors duration-150 hover:bg-zinc-50 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
     feedback === "running" &&
-      (options?.loadingStyle === "skeleton"
-        ? "border-zinc-950 bg-zinc-950 text-zinc-100 disabled:opacity-100 hover:bg-zinc-950 dark:border-zinc-950 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-950"
-        : "border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-100"),
+      "border-zinc-300 bg-zinc-50 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-100",
     feedback === "done" &&
-      "border-zinc-700 bg-zinc-700 text-white hover:bg-zinc-700 dark:border-zinc-300 dark:bg-zinc-300 dark:text-zinc-950 dark:hover:bg-zinc-300",
+      (options?.tone === "success"
+        ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-600 hover:text-white dark:border-emerald-400 dark:bg-emerald-400 dark:text-zinc-950 dark:hover:bg-emerald-400 dark:hover:text-zinc-950"
+        : "border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-100 dark:hover:text-zinc-950"),
   )
 
 export const ClipboardBoxView = ({
@@ -51,68 +59,83 @@ export const ClipboardBoxView = ({
               className={cn(
                 "h-10 rounded-md border-zinc-300 bg-white px-3 text-sm text-zinc-700 shadow-none transition-colors duration-150 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
                 controller.showPasswordInput &&
-                  "border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-100",
+                  "border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-100 dark:hover:text-zinc-950",
               )}
               onMouseDown={(event) => event.preventDefault()}
               onClick={controller.togglePasswordInput}
               disabled={controller.isSavingPassword}
             >
-              {controller.password ? "Reset password" : "Password"}
+              {controller.showPasswordInput ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Hide password
+                </>
+              ) : controller.password ? (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Change password
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Set password
+                </>
+              )}
             </Button>
             <Button
               type="button"
               variant="outline"
               size="icon"
-              className={getIconButtonClass(controller.queryFeedback, {
-                loadingStyle: "skeleton",
-              })}
+              className={getIconButtonClass(controller.queryFeedback)}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => void controller.onQuery()}
               disabled={!controller.password || controller.isQuerying}
               aria-label={controller.queryLabel}
               title={controller.queryLabel}
             >
-              {controller.queryLoading && (
-                <span
-                  aria-hidden="true"
-                  class="button-loading-overlay pointer-events-none absolute inset-0 rounded-[inherit] bg-zinc-500"
-                />
+              {controller.queryLoading ? (
+                <LoaderCircle className="relative z-10 animate-spin" />
+              ) : (
+                <Database className="relative z-10" />
               )}
-              <Database className="relative z-10" />
             </Button>
             <Button
               type="button"
               variant="outline"
               size="icon"
-              className={getIconButtonClass(controller.copyFeedback)}
+              className={getIconButtonClass(controller.copyFeedback, {
+                tone: "success",
+              })}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => void controller.onCopy()}
               disabled={controller.isQuerying}
               aria-label={controller.copyLabel}
               title={controller.copyLabel}
             >
-              <Clipboard className="relative z-10" />
+              {controller.copyFeedback === "running" ? (
+                <LoaderCircle className="relative z-10 animate-spin" />
+              ) : controller.copyFeedback === "done" ? (
+                <Check className="relative z-10" />
+              ) : (
+                <Clipboard className="relative z-10" />
+              )}
             </Button>
             <Button
               type="button"
               variant="outline"
               size="icon"
-              className={getIconButtonClass(controller.saveFeedback, {
-                loadingStyle: "skeleton",
-              })}
+              className={getIconButtonClass(controller.saveFeedback)}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => void controller.onSave()}
               disabled={!controller.password || controller.isQuerying}
               aria-label={controller.saveLabel}
               title={controller.saveLabel}
             >
-              {controller.saveLoading && (
-                <span
-                  aria-hidden="true"
-                  class="button-loading-overlay pointer-events-none absolute inset-0 rounded-[inherit] bg-zinc-500"
-                />
+              {controller.saveLoading ? (
+                <LoaderCircle className="relative z-10 animate-spin" />
+              ) : (
+                <SaveIcon className="relative z-10" />
               )}
-              <SaveIcon className="relative z-10" />
             </Button>
           </div>
         </div>
