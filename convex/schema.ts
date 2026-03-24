@@ -7,9 +7,10 @@ export default defineSchema({
     slug: v.optional(v.literal("only")),
     // per-password clipboard key
     password: v.optional(v.string()),
+    // maintained by mutations so existing rows and new writes share one shape
+    updatedAt: v.optional(v.number()),
     value: v.string(),
   })
     .index("by_slug", ["slug"]) // legacy index remains for backward compat
     .index("by_password", ["password"]),
 });
-
